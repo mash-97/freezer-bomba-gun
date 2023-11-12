@@ -1,0 +1,3 @@
+gcc s.c -o s
+gcc c.c -o c
+

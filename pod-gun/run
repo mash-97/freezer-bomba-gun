@@ -1,0 +1,9 @@
+# echo "run gcc on $1"
+gcc pod-gun.c -lGL -lGLU -lglut -lm -o pod-gun
+if [[ "$?" != "0" ]] 
+then
+  exit
+fi
+
+./pod-gun
+
