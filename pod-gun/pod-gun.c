@@ -124,7 +124,7 @@ typedef struct PodGun{
 	void (* _renderCartidgeBlock)(struct PodGun *self, int slot_num);
 	int (* checkCartidgeAvailability)(PodGun *self, char cartidge_type);
 	void (* releaseBullet)(PodGun *self, PodGun *enemy, char direction);
-  void (* releaseBlock)(PodGun *self, PodGun *enemy, char direction);
+	void (* releaseBlock)(PodGun *self, PodGun *enemy, char direction);
 
 	// ROBO
 	void (* roboRender)(struct PodGun *robo);
@@ -134,8 +134,7 @@ typedef struct PodGun{
 	void (* moveRobo)(struct PodGun *robo, struct PodGun *player);
 	void (* moveRoba)(struct PodGun *robo);
 
-	void (* robaShoot)(PodGun *self, PodGun *enemy, char direction);
-	
+	void (* robaShoot)(PodGun *self, PodGun *enemy);
 } PodGun;
 
 // BULLET::STRUCT
@@ -416,9 +415,10 @@ void releaseBullet(PodGun *self, PodGun *enemy, char direction) {
 	// new bullet at gun nozzel + (bullets_width, bullets_height)
 	Point bullet_position = newPoint(
 		self->umur.x+(self->umul.x-self->umur.x)/2, 
-		self->umur.y+(BULLET_HEIGHT/2)*(direction=='u' ? 1 : -1)
+		self->umur.y+(BULLET_HEIGHT/2)
 	);
-
+	if(direction=='d')
+		bullet_position.y -= (POD_HEIGHT+GUN_HEIGHT+(BULLET_HEIGHT*2));
 	Bullet *bullet = newBullet(bullet_position, BULLET_MOVE_SPEED, direction, self, enemy);
 
 	// commence bullet releasing
@@ -435,8 +435,10 @@ void releaseBlock(PodGun *self, PodGun *enemy, char direction) {
 	// new block at gun nozzel
 	Point block_position = newPoint(
 		self->umur.x+(self->umul.x-self->umur.x)/2, 
-		self->umur.y+(BLOCK_HEIGHT/2)*(direction=='u' ? 1 : -1)
+		self->umur.y+(BLOCK_HEIGHT/2)
 	);
+	if(direction=='d')
+		block_position.y  -= (POD_HEIGHT+GUN_HEIGHT+(BLOCK_HEIGHT*2));
 	Block *block = newBlock(block_position, BLOCK_MOVE_SPEED, direction, self, enemy);
 
 	// commence block releasing
@@ -613,18 +615,18 @@ void moveRobo(PodGun *robo, PodGun *player) {
 
 	switch(hdirection) {
 		case 'l':
-			if(robo->bl.x-move_speed >= 1.0f)
+			if(robo->umul.x-move_speed >= 1.00f)
 				robo->position.x -= move_speed;
 			else {
-				robo->position.x -= robo->bl.x;
+				robo->position.x -= (robo->umul.x-1.00f);
 				hdirection = 'r';
 			}
 			break;
 		case 'r':
-			if(robo->br.x+move_speed < XLIM-1.0f)
+			if(robo->umur.x+move_speed < XLIM-1.00f)
 				robo->position.x += move_speed;
 			else {
-				robo->position.x += (XLIM-1.0f-robo->br.x);
+				robo->position.x += (XLIM-1.0f-robo->umur.x);
 				hdirection = 'l';
 			}
 			break;
@@ -635,23 +637,23 @@ void moveRobo(PodGun *robo, PodGun *player) {
 
 
 void moveRoba(PodGun *robo) {
-	float move_speed = PODGUN_MOVE_SPEED*10.0f;
+	float move_speed = PODGUN_MOVE_SPEED*0.50f;
 	static char hdirection = 'l';
 
 	switch(hdirection) {
 		case 'l':
-			if(robo->bl.x-move_speed >= 1.0f)
+			if(robo->umul.x-move_speed >= 1.0f)
 				robo->position.x -= move_speed;
 			else {
-				robo->position.x -= robo->bl.x;
+				robo->position.x -= (robo->umul.x-1.00f);
 				hdirection = 'r';
 			}
 			break;
 		case 'r':
-			if(robo->br.x+move_speed < (XLIM-1.0f))
+			if(robo->umur.x+move_speed < (XLIM-1.0f))
 				robo->position.x += move_speed;
 			else {
-				robo->position.x = XLIM-1.0f-robo->br.x;
+				robo->position.x += (XLIM-1.0f-robo->umur.x);
 				hdirection = 'l';
 			}
 			break;
@@ -661,19 +663,20 @@ void moveRoba(PodGun *robo) {
 }
 
 
-void robaShoot(PodGun *self, PodGun *enemy, char direction) {
+void robaShoot(PodGun *self, PodGun *enemy) {
 	// first select whether it should shoot
-	if(randInt(0, 10)>=5) {
+	if(randInt(0, 20)<=15) {
 		// now select whether it should shoot a block or a bullet
 		// P(bullet) > P(block)
-		if(randInt(0, 10)<= 8) {
-			self->releaseBullet(self, enemy, direction);
+		if(randInt(0, 10)<= 9) {
+			self->releaseBullet(self, enemy, 'd');
 		}
 		else {
-			self->releaseBlock(self, enemy, direction);
+			self->releaseBlock(self, enemy, 'd');
 		}
 	}
 }
+
 
 /* ============================= ROBO ============================== */
 
@@ -697,7 +700,7 @@ PodGun *newPodGun(Point position) {
 	new_podgun->_renderCartidgeBlock = _renderCartidgeBlock;
 	new_podgun->checkCartidgeAvailability = checkCartidgeAvailability;
 	new_podgun->releaseBullet = releaseBullet;
-  new_podgun->releaseBlock = releaseBlock;
+  	new_podgun->releaseBlock = releaseBlock;
 
 	// for ROBO
 	new_podgun->roboRender = roboRender;
@@ -888,26 +891,26 @@ void moveBlock(Block *self) {
 	self->inferHit(self);
 	switch (self->direction){
 		case 'u':
-			if(self->move_flag && self->position.y+self->move_speed<=YLIM){
+			if(self->move_flag && self->ur.y+self->move_speed<=(YLIM-1.00f)){
 				self->position.y += self->move_speed;
-				self->shape_scale += 0.001;
+				self->shape_scale += 0.002;
 			}
-			else if(self->move_flag && self->position.y+self->move_speed>YLIM) {
-				self->position.y += (YLIM - self->position.y);
+			else if(self->move_flag && self->ur.y+self->move_speed>(YLIM-1.00f)) {
+				self->position.y += (YLIM - self->ur.y - 1.00f);
 				self->move_flag = false;
 			}
 			break;
 		case 'd':
-			if(self->move_flag && self->position.y-self->move_speed>=0.0f){
+			if(self->move_flag && self->br.y-self->move_speed>=1.00f){
 				self->position.y -= self->move_speed;
-				self->shape_scale += 0.005;
+				self->shape_scale += 0.002;
 			}
-			else if(self->move_flag && self->position.y+self->move_speed<0.0f) {
-				self->position.y = 0.0f;
+			else if(self->move_flag && self->br.y+self->move_speed<1.00f) {
+				self->position.y -= (self->br.y-1.00f);
 				self->move_flag = false;
 			}
 			break;
-		
+
 		default:
 			break;
 	}
@@ -947,11 +950,11 @@ void __PODGUN_DISP_FUNC__(void) {
 	// render bullets
 	for(Bullet *bullet = BULLETS; bullet!=NULL; bullet=bullet->next)
 		bullet->render(bullet);
-	
+
 	// render blocks
 	for(Block *block=BLOCKS; block!=NULL; block=block->next)
 		block->render(block);
-	
+
 	glFlush();
 }
 
@@ -965,12 +968,14 @@ void __PODGUN_IDLE_FUNC__(void) {
 	// move blocks
 	for(Block *block = BLOCKS; block!=NULL; block=block->next)
 		block->move(block);
-	
+	Robo->moveRoba(Robo);
+
 	glutPostRedisplay();
 }
 
 void __PODGUN_TIMER_FUNC__(int val) {
-	Robo->moveRoba(Robo);
+	Robo->robaShoot(Robo, Player);
+	// Robo->moveRoba(Robo);
 	sprintf(PRINT_LINES[PRINT_ROBO_DEFENSE], "ROBO DEFENSE: %.2f%%", Robo->defense);
 	sprintf(PRINT_LINES[PRINT_PODGUN_DEFENSE], "PODGUN DEFENSE: %.2f%%", Player->defense);
 	sprintf(PRINT_LINES[PRINT_BULLET_FOOTPRINTS], "BULLETS: %6u", lengthBullets());
@@ -1051,8 +1056,8 @@ void __KEYBOARD_SPECIAL_FUNC__run(void) {
 		Robo->moveRobo(Robo, Player);
 	}
 	if(KEYBOARD_STATUS[GLUT_KEY_DOWN]) {
-			Player->releaseBlock(Player, Robo, 'u');
-			KEYBOARD_STATUS[GLUT_KEY_DOWN] = false;
+		Player->releaseBlock(Player, Robo, 'u');
+		KEYBOARD_STATUS[GLUT_KEY_DOWN] = false;
 	}
 	if(KEYBOARD_STATUS[GLUT_KEY_UP]) {
 		Player->releaseBullet(Player, Robo, 'u');
