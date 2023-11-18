@@ -50,7 +50,7 @@ const float POD_WIDTH = 10.0 * SHAPE_SCALE;
 const float POD_HEIGHT = 4.0 * SHAPE_SCALE;
 const float GUN_WIDTH = 2.0 * SHAPE_SCALE;
 const float GUN_HEIGHT = 3.5 * SHAPE_SCALE;
-const float PODGUN_MOVE_SPEED = 0.025 * SHAPE_SCALE;
+const float PODGUN_MOVE_SPEED = 0.008 * SHAPE_SCALE;
 const float PODGUN_DEFENSE = 100.0f;
 #define PODGUN_LINE_WIDTH 2.5f
 
@@ -63,14 +63,14 @@ const float CARTIDGE_SLOT_HEIGHT = (POD_HEIGHT-(CARTIDGE_SLOT_HEIGHT_PADDING*2))
 
 /* BULLET::CONSTANTS */
 const float BULLET_DAMAGE_VAL = 1.0f;
-const float BULLET_MOVE_SPEED = 0.5f;
+const float BULLET_MOVE_SPEED = 0.2f;
 const float BULLET_WIDTH = GUN_WIDTH;
 const float BULLET_HEIGHT = GUN_HEIGHT;
 const float BULLET_COLOR[3] = {0.25f, 0.25f, 0.50f};
 
 /* BLOCK::CONSTANTS */
 const float BLOCK_DAMAGE_VAL = 0.005f;
-const float BLOCK_MOVE_SPEED = 0.5f;
+const float BLOCK_MOVE_SPEED = 0.2f;
 const float BLOCK_WIDTH = GUN_WIDTH;
 const float BLOCK_HEIGHT = GUN_WIDTH;
 const float BLOCK_ALPHA_DECREASE_RATE = 0.01f;
@@ -902,23 +902,23 @@ void moveBlock(Block *self) {
 			case 'u':
 				if(self->ur.y+self->move_speed <= (YLIM-0.00f)){
 					self->position.y += self->move_speed;
-					self->shape_scale += 0.004;
+					self->shape_scale += 0.0011;
 				}
 				else {
 					self->position.y += (YLIM - self->ur.y - 0.00f);
 					self->move_flag = false;
-					self->mf_p = 7;
+					self->mf_p = 7;  // debug
 				}
 				break;
 			case 'd':
 				if(self->br.y-self->move_speed >= 0.00f){
 					self->position.y -= self->move_speed;
-					self->shape_scale += 0.004;
+					self->shape_scale += 0.0011;
 				}
 				else {
 					self->position.y -= (self->br.y-0.00f);
 					self->move_flag = false;
-					self->mf_p = 3;
+					self->mf_p = 3; // debug
 				}
 				break;
 
